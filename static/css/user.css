@@ -1,0 +1,117 @@
+/* Style for the user dropdown */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+/* Improved button styling */
+.dropbtn {
+    background-color: #007BFF;
+    color: white;
+    padding: 12px 18px;
+    border: none;
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 500;
+    transition: background 0.3s ease, transform 0.2s;
+}
+
+/* Slight hover effect for better UX */
+.dropbtn:hover {
+    background-color: #0056b3;
+    transform: translateY(-1px);
+}
+
+/* Dropdown content */
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: white;
+    min-width: 220px;
+    box-shadow: 0px 5px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 6px;
+    overflow: hidden;
+    right: 0;
+    z-index: 1000;
+    padding: 10px 0;
+}
+
+/* Styled balance section */
+.dropdown-content p {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    padding: 12px 16px;
+    margin: 0;
+    border-bottom: 1px solid #ddd;
+}
+
+/* Balance list */
+.dropdown-content ul {
+    list-style: none;
+    margin: 0;
+    padding: 8px 16px;
+}
+
+/* List items */
+.dropdown-content ul li {
+    font-size: 14px;
+    font-weight: 500;
+    color: #444;
+    padding: 6px 0;
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* Bullet point styling */
+.dropdown-content ul li::before {
+    content: "•";
+    color: #007BFF;
+    font-weight: bold;
+    margin-right: 8px;
+}
+
+/* Hover effect for list items */
+.dropdown-content ul li:hover {
+    color: #007BFF;
+}
+
+/* Collateral */
+#collateral-display {
+    font-size: 14px;
+    font-weight: 400;
+    /* Normal weight */
+    color: #666;
+    /* Slightly lighter text */
+    padding: 8px 16px;
+    margin: 0;
+}
+
+/* Log out link */
+.dropdown-content a {
+    font-size: 14px;
+    font-weight: 700;
+    /* Bold */
+    color: #333;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* Hover effect for log out link */
+.dropdown-content a:hover {
+    background-color: #f0f0f0;
+    color: #007BFF;
+}
+
+/* Show dropdown on hover */
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
+/* Show when JavaScript adds 'show' class */
+.dropdown-content.show {
+    display: block;
+}

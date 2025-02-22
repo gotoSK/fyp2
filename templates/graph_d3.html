@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Transaction Graph Visualization</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+        <!-- <link rel="stylesheet" href="static/css/style.css"> -->
+        <script src="https://cdn.socket.io/4.5.1/socket.io.min.js"></script>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <!-- jQuery for easy AJAX -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="/static/js/script.js"></script>
+        <script src="/static/js/user.js"></script>
+        <script src="/static/js/d3.v7.js"></script>
+        <script src="/static/js/d3.v7.min.js"></script>
+        <link rel="stylesheet" href="/static/css/main.min.css">
+        <link rel="stylesheet" href="/static/css/style.css">
+        <link rel="stylesheet" href="/static/css/user.css">
+        <style>
+            body {
+    font-family: 'Poppins', sans-serif;
+    margin: 20px;
+}
+
+body {
+    margin: 0;
+    overflow: hidden;
+}
+
+.link {
+    stroke: black;
+    stroke-opacity: 0.6;
+    stroke-width: 1.5px;
+}
+
+.node {
+    top: -10px;
+    fill: green;
+
+}
+
+.label {
+    fill: white;
+    /* font-family: sans-serif; */
+    font-size: 14px;
+    text-anchor: middle;
+    /* Center the text horizontally */
+    dominant-baseline: middle;
+    text-shadow: #555;
+    
+    /* Center the text vertically */
+}
+.weight {
+    /* font-family: sans-serif; */
+    font-size: 15px;
+    fill: black;
+    text-anchor: middle;
+    /* Center the text horizontally */
+}
+        
+        .graph-container {
+            margin: 50px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .graph {
+            flex: 1 1 45%;
+            min-width: 300px;
+        }
+        </style>
+    </head>
+    <body>
+        <!-- Stock's live-info & profile section -->
+        <div class="container">
+            <div class="row">
+                <div class="col-8">
+                    <h3>Order Matching and Clearing Obligations System</h3>
+                </div>
+                <div class="col-4">
+                    <div class="text-end">
+                        <div class="dropdown">
+                            <button class="btn form-control btn-primary" class="dropbtn">{{ session['username'] }}</button>
+                            <div class="dropdown-content">
+                                {% if session['username'] == 'admin' %}
+                                <a href="/">Market Dashboard</a>
+                                <a href="/settlement">Settlement</a>
+                                {% endif %}
+                                <a href="/logout">Log out</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container mt-3">
+            <div class="row">
+                <div class="col-md-6">
+                    <label for="entity-select" class="form-label">Select Buyer/Seller:</label>
+                    <select id="entity-select" class="form-select">
+                        <option value="">--Select--</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="symbol-select" class="form-label">Select Symbol:</label>
+                    <select id="symbol-select" class="form-select">
+                        <option value="">--Select--</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="graph-container mt-3">
+            <div class="graph">
+                <h3>Before Normalization</h3>
+                <svg id="before-graph"></svg>
+            </div>
+            <div class="graph">
+                <h3>After Normalization</h3>
+                <svg id="after-graph"></svg>
+            </div>
+        </div>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="https://d3js.org/d3.v7.min.js"></script>
+        <script src="static/js/node.js"></script>
+    </body>
+</html>

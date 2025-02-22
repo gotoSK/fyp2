@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database</title>
+</head>
+<body>
+    <div class="content">
+        <h1>Database</h1>
+        {% if database|length < 1%}
+        <h4>Database empty!</h4>
+        {% else %}
+        <table>
+            <tr>
+                <th>id</th>
+                <th>conID</th>
+                <th>buyerID</th>
+                <th>sellerID</th>
+                <th>qty</th>
+                <th>rate</th>
+                <th>buyerName</th>
+                <th>sellerName</th>
+            </tr>
+            {% for data in database %}
+                <!-- {% if data.buyerID == '100' %} -->
+                <tr>
+                    <td>{{ data.id }}</td>
+                    <td>{{ data.conID }}</td>
+                    <td>{{ data.buyerID }}</td>
+                    <td>{{ data.sellerID }}</td>
+                    <td>{{ data.qty }}</td>
+                    <td>{{ data.rate }}</td>
+                    <td>{{ data.buyerName }}</td>
+                    <td>{{ data.sellerName }}</td>
+                </tr>
+                <!-- {% endif %} -->
+            {% endfor %}
+        </table>
+        {% endif %}
+    </div>
+</body>
+</html>

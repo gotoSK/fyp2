@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        dataMat = [[1, 2, 3, 4, [0, 9, 8]], [11, 21, 31, 41, [1, 91, 81]], [12, 22, 32, 42, [2, 92, 82]]];
+        // dataMat = [1, 2, 3];
+        for (let i in dataMat) {
+            if (dataMat[i][1] == 21) {
+            // if (dataMat[i] == 2) {
+                dataMat.splice(i, 1);
+                break;
+            }
+        }
+        console.log(dataMat);
+    </script>
+</body>
+</html>
