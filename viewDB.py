@@ -5,8 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 app = Flask(__name__)
 
 # Configure the SQLite database
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False  # Suppress warnings
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database2025-02-17_21-16-42.db"  # or replace database file name
 db = SQLAlchemy(app)
 
 # Defining the database model
