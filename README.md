@@ -11,7 +11,7 @@
     ```
     This creates a virtual environment for python with folder named ``venv``
 - Step 3
-    - Execute Follwing command 
+    - Execute Follwing command
     ```ps
     venv\Scripts\activate
     ```
