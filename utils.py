@@ -21,8 +21,8 @@ datecode = None
 lock_orderPlacing = []
 
 
-# attributes:                        OrderNo, Symbol, Qty, Rate, Remaining Qty, Type, Sucess_on_placing
-# attribute col-index (placedOrders):      0,      1,   2,    3,             4,    5,                 6
+# attributes:                        OrderNo, Symbol, Qty, Rate, Remaining Qty, Type, Sucess_on_placing, username
+# attribute col-index (placedOrders):      0,      1,   2,    3,             4,    5,                 6,        7
 
 
 class AssetData():
@@ -40,11 +40,13 @@ class AssetData():
         # order book for top bid & ask prices
         self.buyOB = []; self.sellOB = []
         # total no. of sub-threads in existance
+
         self.subThreads = 0 
         # while waiting for main thread to be halted
         self.event_start_subThread = threading.Event()
         # while LMT order is being placed
         self.event_place_LMT = threading.Event()
+
         # when main-thread is not waiting
         self.skip = False
         # market execution mode
