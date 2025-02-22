@@ -4,13 +4,14 @@ import time
 print("Loading Users ...")
 
 class User:
-    def __init__(self, username, password, name, is_admin):
+    def __init__(self, username, password, name, is_admin, uid):
         self.username = username
         self.password = password
         self.name = name 
-        self.balance = {asset.arr[0][9]: 100000 for asset in assets} # for demo-user, using 1,00,000 shares as their balance for each asset in the market
-        self.collateral = 1000000.00 # for demo-user, 10 lakhs as their purchasing power
+        self.balance = {asset.arr[0][9]: 100000 for asset in assets}  # for demo-user, using 1,00,000 shares as their balance for each asset in the market
+        self.collateral = 1000000.00  # for demo-user, 10 lakhs as their purchasing power
         self.is_admin = is_admin
+        self.uid = uid
 
     def check_password(self, password):
         return self.password == password
@@ -22,34 +23,31 @@ users = {
         "oic_finance",
         "iamuser",
         "Orchid International",
-        False
+        False,
+        "101"
         ),
 
-    "sugam_karki": User(
-        "sugam_karki",
+    "om_swastik": User(
+        "om_swastik",
         "iamuser",
-        "Sugam Karki",
-        False
+        "Swastika Traders",
+        False,
+        "102"
         ),
 
-    "anish_tamang": User(
-        "anish_tamang",
+    "quant_fund": User(
+        "quant_fund",
         "iamuser",
-        "Anish Tamang",
-        False
-        ),
-
-    "parag_niraula": User(
-        "parag_niraula",
-        "iamuser",
-        "Parag Niraula",
-        False
+        "Quant Research & Investment",
+        False,
+        "103"
         ),
         
     "admin": User(
         "admin",
         "iamadmin",
         "Administrator",
-        True
+        True,
+        "100"
         )
 }
