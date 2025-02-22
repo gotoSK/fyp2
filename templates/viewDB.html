@@ -23,7 +23,6 @@
                 <th>sellerName</th>
             </tr>
             {% for data in database %}
-                <!-- {% if data.buyerID == '100' %} -->
                 <tr>
                     <td>{{ data.id }}</td>
                     <td>{{ data.conID }}</td>
@@ -34,7 +33,6 @@
                     <td>{{ data.buyerName }}</td>
                     <td>{{ data.sellerName }}</td>
                 </tr>
-                <!-- {% endif %} -->
             {% endfor %}
         </table>
         {% endif %}
