@@ -64,6 +64,12 @@ document.addEventListener('DOMContentLoaded', function () {
     // Collateral deduction request from server for market orders
     socket.on("deduct_req", function (data) {
         socket.emit('deduct_buy', { 'amt': data.amt, 'uname': data.uname });
+
+    });
+    // Collateral deduction request from server for market orders
+    socket.on("add_req", function (data) {
+        socket.emit('add_buy', { 'amt': data.amt, 'uname': data.uname });
+
     });
 
 
@@ -620,14 +626,23 @@ document.addEventListener('DOMContentLoaded', function () {
                 collateral -= qty * rate;
                 sessionStorage.setItem("collateral", collateral);
                 // Emit deduction event to Flask
-                socket.emit('deduct_buy', { 'amt': qty * rate });
+                socket.emit('deduct_buy', { 'amt': qty * rate }, { 'qty': qty });
             }
+            balances[symbol] += qty
+            sessionStorage.setItem('balances', JSON.stringify(balances));
+            socket.emit('add_share', { 'qty': qty });
         }
         // Deducting asset balance
         if (action == 'Sell') {
             balances[symbol] -= qty
             sessionStorage.setItem('balances', JSON.stringify(balances));
             socket.emit('deduct_sell', { 'qty': qty });
+            if (rate) {
+                collateral += qty * rate;
+                sessionStorage.setItem("collateral", collateral);
+                // Emit addiction event to Flask
+                socket.emit('add_buy', { 'amt': qty * rate });
+            }
         }
 
         // Submit form data via AJAX

@@ -107,6 +107,9 @@ def MKT_execute(obj):
         else:
             socketio.emit(
                 'order_book', {'ltp': obj.buyOB[0][2], 'sym': placedOrders[i-1][1]})
+            # add collateral
+            socketio.emit('add_req', {
+                          'amt': obj.sellOB[0][2] * obj.sellOB[0][1], 'uname': placedOrders[i-1][7]})
 
         # Add data to database
         with app.app_context():
@@ -170,6 +173,9 @@ def MKT_execute(obj):
         else:
             socketio.emit('order_book', {
                           'buyOB': topAskBid, 'ltp': topAskBid[0][2], 'sym': placedOrders[i-1][1]})
+            # add collateral
+            socketio.emit('add_req', {
+                          'amt': obj.sellOB[0][2] * placedOrders[i-1][4], 'uname': placedOrders[i-1][7]})
 
         # Add data to database
         with app.app_context():
@@ -788,7 +794,6 @@ def place_order():
 def handle_deduction(data):
     user = users.get(session['username'])
     user.collateral -= data.get('amt')
-
     if 'username' in session:  # only consider to emit updated collateral to client if user is logged in
         # if it was a market order, collateral is deducted as it gets filled
         if data.get('uname'):
@@ -796,6 +801,7 @@ def handle_deduction(data):
             if session['username'] == data.get('uname'):
                 socketio.emit(
                     'user_info', {'collateral': user.collateral}, room=request.sid)
+
         # in cases of limit order, collateral can be deducted all at once and emit
         else:
             socketio.emit(
@@ -811,6 +817,33 @@ def handle_deduction(data):
 
     if 'username' in session:
         socketio.emit('user_info', {'balance': user.balance}, room=request.sid)
+
+
+@socketio.on('add_share')
+def handle_share(data):
+    user = users.get(session['username'])
+    user.balance[symbol] += data.get('qty')
+
+    if 'username' in session:
+        socketio.emit('user_info', {'balance': user.balance}, room=request.sid)
+
+
+@socketio.on('add_buy')
+def handle_buy(data):
+    user = users.get(session['username'])
+    user.collateral += data.get('amt')
+
+    if 'username' in session:  # only consider to emit updated collateral to client if user is logged in
+        # if it was a market order, collateral is deducted as it gets filled
+        if data.get('uname'):
+            # so check if that same user hasn't logged out before emiting the collateral
+            if session['username'] == data.get('uname'):
+                socketio.emit(
+                    'user_info', {'collateral': user.collateral}, room=request.sid)
+        # in cases of limit order, collateral can be deducted all at once and emit
+        else:
+            socketio.emit(
+                'user_info', {'collateral': user.collateral}, room=request.sid)
 
 
 @socketio.on('connect')
