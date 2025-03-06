@@ -40,6 +40,16 @@ body {
     padding: 10px;
 }
 
+#analysis {
+    margin-top: 10px;
+    max-height: 300px;
+    /* Adjust height as needed */
+    overflow-y: auto;
+    /* Enable vertical scroll */
+    border: 1px solid #ddd;
+    padding: 10px;
+}
+
 .explore .selected {
     background-color: teal;
     color: white;

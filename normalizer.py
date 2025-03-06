@@ -3,6 +3,7 @@ import networkx as nx
 from tarjan import find_strongly_connected_components
 import copy
 
+
 class TransactionGraph:
     def __init__(self):
         self.graph = nx.DiGraph()
@@ -14,10 +15,8 @@ class TransactionGraph:
         else:
             self.graph.add_edge(buyer, seller, qty=qty, rate=rate)
 
-
     def normalize(self):
         """Normalize the graph by removing reciprocal transactions within SCCs."""
-        
 
         # Convert the graph to a format suitable for Tarjan's algorithm
         graph_dict = defaultdict(list)
@@ -59,14 +58,14 @@ class TransactionGraph:
             for u, v, qty in to_add:
                 self.graph.add_edge(u, v, qty=qty)
 
-        # 🔥 **Remove self-loops explicitly**
+        # Remove self-loops explicitly
         self_loops = [(u, v) for u, v in self.graph.edges() if u == v]
         self.graph.remove_edges_from(self_loops)
-
 
     def get_normalized_graph(self):
         """Return the normalized graph as a list of edges with source, target, qty, and rate."""
         edges = []
         for u, v, data in self.graph.edges(data=True):
-            edges.append({"source": u, "target": v, "qty": data['qty'], "rate": data.get('rate', 0)})
+            edges.append({"source": u, "target": v,
+                         "qty": data['qty'], "rate": data.get('rate', 0)})
         return edges

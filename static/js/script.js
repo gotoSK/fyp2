@@ -759,4 +759,57 @@ document.addEventListener('DOMContentLoaded', function () {
         sessionStorage.setItem('lastCheckTime', lastCheckTime);
         sessionStorage.setItem('labels', JSON.stringify(labels));
     });
+
+    async function fetchBrokerAnalysis() {
+        let symbol = document.getElementById('symbol').value;
+
+        try {
+            let res = await fetch(`/broker_analysis?symbol=${symbol}`);
+            if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+
+            let brokers = await res.json();
+            console.log("Broker Analysis Data:", brokers);
+
+            let tableBody = document.getElementById('broker-table-body');
+            tableBody.innerHTML = '';  // Clear previous data
+
+            brokers.forEach(({ broker, total_buy, total_sell, total_hold }) => {
+                let row = `
+                    <tr>
+                        <td>${broker}</td>
+                        <td>${total_buy}</td>
+                        <td>${total_sell}</td>
+                        <td>${total_hold}</td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+            });
+        } catch (error) {
+            console.error("Error fetching broker analysis:", error);
+        }
+    }
+
+    // Event Listener
+    document.getElementById("fetchBrokerButton").addEventListener("click", fetchBrokerAnalysis);
+
+    async function loadSymbols() {
+        try {
+            let res = await fetch('/symbols');
+            let symbols = await res.json();
+
+            let symbolDropdown = document.getElementById('symbol');
+            symbolDropdown.innerHTML = '<option value="">Select Symbol</option>';
+
+            symbols.forEach(symbol => {
+                let option = document.createElement('option');
+                option.value = symbol;
+                option.textContent = symbol;
+                symbolDropdown.appendChild(option);
+            });
+        } catch (error) {
+            console.error("Error loading symbols:", error);
+        }
+    }
+    loadSymbols();
+
 });

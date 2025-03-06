@@ -96,7 +96,29 @@
                         </table>
                     </div>
                     <div id="stats-container" class="container-content">
-                        <p>Comming Soon.</p>
+                        <div class="broker_analysis">
+                            <div class="container mt-3 mb-3">
+                                <h3>Broker Analysis</h3>
+                                <!-- <h4>Select Symbol</h4> -->
+                                <select id="symbol" class="form-select">
+                                    <option value="">Select Symbol</option>
+                                </select>
+                                <button id="fetchBrokerButton" class="btn btn-primary mt-2">Fetch Data</button>
+                                <div id="analysis">
+                                    <table class="table table-sm mt-3">
+                                        <thead class="">
+                                            <tr>
+                                                <th>Broker</th>
+                                                <th>Total Buy</th>
+                                                <th>Total Sell</th>
+                                                <th>Total Hold</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="broker-table-body"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <!-- Order Form Section -->
                     <div class="form-container mt-2">

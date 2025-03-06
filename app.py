@@ -1,3 +1,4 @@
+from sqlalchemy import func
 from normalizer import TransactionGraph
 from settlement import calculate_settlement
 from utils import *
@@ -16,13 +17,13 @@ from flask_socketio import SocketIO
 from sqlalchemy.exc import IntegrityError
 
 
-
 # App setups
 print("Configuring App & DB setups ...")
 app = Flask(__name__)
 socketio = SocketIO(app)
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database" + datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".db"  # database file name: database<date_time of creation>.db
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database" + datetime.now().strftime(
+    "%Y-%m-%d_%H-%M-%S") + ".db"  # database file name: database<date_time of creation>.db
 db = SQLAlchemy(app)
 
 app.secret_key = 'your_secret_key'  # Change this to a secure random string
@@ -39,10 +40,10 @@ class PriceRow(db.Model):
     buyerName = db.Column(db.String(100))
     sellerName = db.Column(db.String(100))
     symbol = db.Column(db.String(10))
-    
+
     def __repr__(self):
         return f'<Task {self.id}>'
-    
+
     def to_dict(self):
         """Convert SQLAlchemy object to a dictionary."""
         return {
@@ -70,7 +71,8 @@ event_mkt_exec_inc_order_no.set()
 
 finish = False  # wrap up order matching simulation immediately
 barrier = threading.Barrier(len(assets))
-event_terminate = False  # True if user orders are already deleted or in process to be deleted
+# True if user orders are already deleted or in process to be deleted
+event_terminate = False
 lock_del = threading.Lock()
 finished = False  # trading session ended
 
@@ -83,9 +85,10 @@ def genConID(rem_mkt_order, OrderNo):
 
     return datecode + '1' + '0' * (7 - len(str(OrderNo))) + str(OrderNo)
 
+
 def MKT_execute(obj):
     global placedOrders
-    i = MKT_Orders[0] # grab order id of this order
+    i = MKT_Orders[0]  # grab order id of this order
 
     # Order ready to be filled
     if placedOrders[i-1][6] == False:
@@ -96,11 +99,14 @@ def MKT_execute(obj):
     if (placedOrders[i-1][4] >= obj.sellOB[0][1] and placedOrders[i-1][5] == 'Buy') or (placedOrders[i-1][4] >= obj.buyOB[0][1] and placedOrders[i-1][5] == 'Sell'):
         # Update LTP
         if placedOrders[i-1][5] == 'Buy':
-            socketio.emit('order_book', {'ltp': obj.sellOB[0][2], 'sym': placedOrders[i-1][1]})
+            socketio.emit(
+                'order_book', {'ltp': obj.sellOB[0][2], 'sym': placedOrders[i-1][1]})
             # deduct collateral
-            socketio.emit('deduct_req', {'amt': obj.sellOB[0][2] * obj.sellOB[0][1], 'uname': placedOrders[i-1][7]})
+            socketio.emit('deduct_req', {
+                          'amt': obj.sellOB[0][2] * obj.sellOB[0][1], 'uname': placedOrders[i-1][7]})
         else:
-            socketio.emit('order_book', {'ltp': obj.buyOB[0][2], 'sym': placedOrders[i-1][1]})
+            socketio.emit(
+                'order_book', {'ltp': obj.buyOB[0][2], 'sym': placedOrders[i-1][1]})
 
         # Add data to database
         with app.app_context():
@@ -109,28 +115,33 @@ def MKT_execute(obj):
                 rand = maker(obj.arr)
                 if placedOrders[i-1][5] == 'Buy':
                     if placedOrders[i-1][2] == placedOrders[i-1][4]:
-                        new_row = PriceRow(conID=genConID(False, i), buyerID=users[placedOrders[i-1][7]].uid, sellerID=rand[3], qty=obj.sellOB[0][1], rate=obj.sellOB[0][2], buyerName=users[placedOrders[i-1][7]].name, sellerName=rand[8], symbol=obj.arr[0][9])
+                        new_row = PriceRow(conID=genConID(False, i), buyerID=users[placedOrders[i-1][7]].uid, sellerID=rand[3], qty=obj.sellOB[0]
+                                           [1], rate=obj.sellOB[0][2], buyerName=users[placedOrders[i-1][7]].name, sellerName=rand[8], symbol=obj.arr[0][9])
                     else:
                         event_place_order_inc_order_no.wait()
                         event_mkt_exec_inc_order_no.clear()
                         Orders += 1
-                        new_row = PriceRow(conID=genConID(True, Orders), buyerID=users[placedOrders[i-1][7]].uid, sellerID=rand[3], qty=obj.sellOB[0][1], rate=obj.sellOB[0][2], buyerName=users[placedOrders[i-1][7]].name, sellerName=rand[8], symbol=obj.arr[0][9])
+                        new_row = PriceRow(conID=genConID(True, Orders), buyerID=users[placedOrders[i-1][7]].uid, sellerID=rand[3], qty=obj.sellOB[0]
+                                           [1], rate=obj.sellOB[0][2], buyerName=users[placedOrders[i-1][7]].name, sellerName=rand[8], symbol=obj.arr[0][9])
                         event_mkt_exec_inc_order_no.set()
                 else:
                     if placedOrders[i-1][2] == placedOrders[i-1][4]:
-                        new_row = PriceRow(conID=genConID(False, i), buyerID=rand[2], sellerID=users[placedOrders[i-1][7]].uid, qty=obj.buyOB[0][1], rate=obj.buyOB[0][2], buyerName=rand[7], sellerName=users[placedOrders[i-1][7]].name, symbol=obj.arr[0][9])
+                        new_row = PriceRow(conID=genConID(False, i), buyerID=rand[2], sellerID=users[placedOrders[i-1][7]].uid, qty=obj.buyOB[0]
+                                           [1], rate=obj.buyOB[0][2], buyerName=rand[7], sellerName=users[placedOrders[i-1][7]].name, symbol=obj.arr[0][9])
                     else:
                         event_place_order_inc_order_no.wait()
                         event_mkt_exec_inc_order_no.clear()
                         Orders += 1
-                        new_row = PriceRow(conID=genConID(True, Orders), buyerID=rand[2], sellerID=users[placedOrders[i-1][7]].uid, qty=obj.buyOB[0][1], rate=obj.buyOB[0][2], buyerName=rand[7], sellerName=users[placedOrders[i-1][7]].name, symbol=obj.arr[0][9])
+                        new_row = PriceRow(conID=genConID(True, Orders), buyerID=rand[2], sellerID=users[placedOrders[i-1][7]].uid, qty=obj.buyOB[0]
+                                           [1], rate=obj.buyOB[0][2], buyerName=rand[7], sellerName=users[placedOrders[i-1][7]].name, symbol=obj.arr[0][9])
                         event_mkt_exec_inc_order_no.set()
                 db.session.add(new_row)
                 db.session.commit()
             except IntegrityError:
                 db.session.rollback()  # Rollback in case of error
             tranData = PriceRow.query.order_by(PriceRow.id).all()
-            tranDataDict = [row.to_dict() for row in tranData] # Convert data to a list of dictionaries
+            # Convert data to a list of dictionaries
+            tranDataDict = [row.to_dict() for row in tranData]
             socketio.emit('floorsheet', {'database': tranDataDict})
 
         # remaining orders to get filled
@@ -140,21 +151,25 @@ def MKT_execute(obj):
             placedOrders[i-1][4] -= obj.buyOB[0][1]
         socketio.emit('placed_orders', {'placedOrders': placedOrders})
 
-        if placedOrders[i-1][4] == 0: # when all qty is filled
+        if placedOrders[i-1][4] == 0:  # when all qty is filled
             del MKT_Orders[0]
 
     # When the best bid/ask qty > mkt order's qty
     else:
         # update the top bid/ask
         topAskBid = obj.sellOB if placedOrders[i-1][5] == 'Buy' else obj.buyOB
-        topAskBid[0][0] = int(topAskBid[0][0] * (1 - (placedOrders[i-1][4] / topAskBid[0][1]))) if topAskBid[0][0] > 1 else topAskBid[0][0]
+        topAskBid[0][0] = int(topAskBid[0][0] * (1 - (placedOrders[i-1][4] /
+                              topAskBid[0][1]))) if topAskBid[0][0] > 1 else topAskBid[0][0]
         topAskBid[0][1] -= placedOrders[i-1][4]
         if placedOrders[i-1][5] == 'Buy':
-            socketio.emit('order_book', {'sellOB': topAskBid, 'ltp': topAskBid[0][2], 'sym': placedOrders[i-1][1]})
+            socketio.emit('order_book', {
+                          'sellOB': topAskBid, 'ltp': topAskBid[0][2], 'sym': placedOrders[i-1][1]})
             # deduct collateral
-            socketio.emit('deduct_req', {'amt': obj.sellOB[0][2] * placedOrders[i-1][4], 'uname': placedOrders[i-1][7]})
+            socketio.emit('deduct_req', {
+                          'amt': obj.sellOB[0][2] * placedOrders[i-1][4], 'uname': placedOrders[i-1][7]})
         else:
-            socketio.emit('order_book', {'buyOB': topAskBid, 'ltp': topAskBid[0][2], 'sym': placedOrders[i-1][1]})
+            socketio.emit('order_book', {
+                          'buyOB': topAskBid, 'ltp': topAskBid[0][2], 'sym': placedOrders[i-1][1]})
 
         # Add data to database
         with app.app_context():
@@ -162,28 +177,33 @@ def MKT_execute(obj):
                 rand = maker(obj.arr)
                 if placedOrders[i-1][5] == 'Buy':
                     if placedOrders[i-1][2] == placedOrders[i-1][4]:
-                        new_row = PriceRow(conID=genConID(False, i), buyerID=users[placedOrders[i-1][7]].uid, sellerID=rand[3], qty=placedOrders[i-1][4], rate=obj.sellOB[0][2], buyerName=users[placedOrders[i-1][7]].name, sellerName=rand[8], symbol=obj.arr[0][9])
+                        new_row = PriceRow(conID=genConID(False, i), buyerID=users[placedOrders[i-1][7]].uid, sellerID=rand[3], qty=placedOrders[i-1]
+                                           [4], rate=obj.sellOB[0][2], buyerName=users[placedOrders[i-1][7]].name, sellerName=rand[8], symbol=obj.arr[0][9])
                     else:
                         event_place_order_inc_order_no.wait()
                         event_mkt_exec_inc_order_no.clear()
                         Orders += 1
-                        new_row = PriceRow(conID=genConID(True, Orders), buyerID=users[placedOrders[i-1][7]].uid, sellerID=rand[3], qty=placedOrders[i-1][4], rate=obj.sellOB[0][2], buyerName=users[placedOrders[i-1][7]].name, sellerName=rand[8], symbol=obj.arr[0][9])
+                        new_row = PriceRow(conID=genConID(True, Orders), buyerID=users[placedOrders[i-1][7]].uid, sellerID=rand[3], qty=placedOrders[i-1]
+                                           [4], rate=obj.sellOB[0][2], buyerName=users[placedOrders[i-1][7]].name, sellerName=rand[8], symbol=obj.arr[0][9])
                         event_mkt_exec_inc_order_no.set()
                 else:
                     if placedOrders[i-1][2] == placedOrders[i-1][4]:
-                        new_row = PriceRow(conID=genConID(False, i), buyerID=rand[2], sellerID=users[placedOrders[i-1][7]].uid, qty=placedOrders[i-1][4], rate=obj.buyOB[0][2], buyerName=rand[7], sellerName=users[placedOrders[i-1][7]].name, symbol=obj.arr[0][9])
+                        new_row = PriceRow(conID=genConID(False, i), buyerID=rand[2], sellerID=users[placedOrders[i-1][7]].uid, qty=placedOrders[i-1]
+                                           [4], rate=obj.buyOB[0][2], buyerName=rand[7], sellerName=users[placedOrders[i-1][7]].name, symbol=obj.arr[0][9])
                     else:
                         event_place_order_inc_order_no.wait()
                         event_mkt_exec_inc_order_no.clear()
                         Orders += 1
-                        new_row = PriceRow(conID=genConID(True, Orders), buyerID=rand[2], sellerID=users[placedOrders[i-1][7]].uid, qty=placedOrders[i-1][4], rate=obj.buyOB[0][2], buyerName=rand[7], sellerName=users[placedOrders[i-1][7]].name, symbol=obj.arr[0][9])
+                        new_row = PriceRow(conID=genConID(True, Orders), buyerID=rand[2], sellerID=users[placedOrders[i-1][7]].uid, qty=placedOrders[i-1]
+                                           [4], rate=obj.buyOB[0][2], buyerName=rand[7], sellerName=users[placedOrders[i-1][7]].name, symbol=obj.arr[0][9])
                         event_mkt_exec_inc_order_no.set()
                 db.session.add(new_row)
                 db.session.commit()
             except IntegrityError:
                 db.session.rollback()  # Rollback in case of error
             tranData = PriceRow.query.order_by(PriceRow.id).all()
-            tranDataDict = [row.to_dict() for row in tranData] # Convert data to a list of dictionaries
+            # Convert data to a list of dictionaries
+            tranDataDict = [row.to_dict() for row in tranData]
             socketio.emit('floorsheet', {'database': tranDataDict})
 
         # all qty filled
@@ -196,96 +216,103 @@ def orderMatch_sim(obj):
 
     def genOB(rate):
         # top bid & ask prices in order book
-        bidPrices = []; askPrices = []
+        bidPrices = []
+        askPrices = []
         bidPrices = genPrices(rate, 'bids', obj.prices)
         askPrices = genPrices(rate, 'asks', obj.prices)
 
         # generating asks order book
-        for i in range(0, TOP_BIDSASKS_NO): # filling each row in order book
-            obj.sellOB.append([0, 0, askPrices[i]]) # initializing row data: [orders, qty, price]
-            brokers = [] # collects all the brokers in the list for that particular price
-            if(i == 0):
+        for i in range(0, TOP_BIDSASKS_NO):  # filling each row in order book
+            # initializing row data: [orders, qty, price]
+            obj.sellOB.append([0, 0, askPrices[i]])
+            brokers = []  # collects all the brokers in the list for that particular price
+            if (i == 0):
                 idx = 0
-                while(idx < len(obj.arr) and obj.arr[idx][5] == obj.sellOB[i][2]):
+                while (idx < len(obj.arr) and obj.arr[idx][5] == obj.sellOB[i][2]):
                     idx += 1
                 idx -= 1
-                if(idx != -1):
+                if (idx != -1):
                     for x in obj.queue:
                         count = -1
                         for y in x:
-                            if(obj.sellOB[i][2] == y[5]):
+                            if (obj.sellOB[i][2] == y[5]):
                                 obj.sellOB[i][1] += y[4]
                                 brokers.append(y[3])
                                 count += 1
-                                if(count == idx):
+                                if (count == idx):
                                     break
-                        if(obj.sellOB[i][1] != 0):
+                        if (obj.sellOB[i][1] != 0):
                             break
             else:
                 for x in obj.queue:
                     for y in x:
-                        if(obj.sellOB[i][2] == y[5]): # to find orders data realted to current price in queue
-                            obj.sellOB[i][1] += y[4] # fetching qty and adding
-                            brokers.append(y[3]) # append all brokers
+                        # to find orders data realted to current price in queue
+                        if (obj.sellOB[i][2] == y[5]):
+                            obj.sellOB[i][1] += y[4]  # fetching qty and adding
+                            brokers.append(y[3])  # append all brokers
                         else:
                             break
-                    if(obj.sellOB[i][1] != 0):
+                    if (obj.sellOB[i][1] != 0):
                         break
-            if(len(brokers) == 0):
-                obj.sellOB[i][1] = int(random.triangular(10, 1300, 200)) # random qty between 10-1300, mostly being of 100-300
-                obj.sellOB[i][0] = int(random.triangular(1, 20, 7)) # random qty between 1-20, mostly being around 7
+            if (len(brokers) == 0):
+                # random qty between 10-1300, mostly being of 100-300
+                obj.sellOB[i][1] = int(random.triangular(10, 1300, 200))
+                # random qty between 1-20, mostly being around 7
+                obj.sellOB[i][0] = int(random.triangular(1, 20, 7))
             else:
-                obj.sellOB[i][0] = len(obj.remove_duplicates(brokers)) # total orders
-        
+                obj.sellOB[i][0] = len(
+                    obj.remove_duplicates(brokers))  # total orders
+
         # generating bids order book
         for i in range(0, TOP_BIDSASKS_NO):
             obj.buyOB.append([0, 0, bidPrices[i]])
             brokers = []
             for x in obj.queue:
                 for y in x:
-                    if(obj.buyOB[i][2] == y[5]):
+                    if (obj.buyOB[i][2] == y[5]):
                         obj.buyOB[i][1] += y[4]
                         brokers.append(y[2])
                     else:
                         break
-                if(obj.buyOB[i][1] != 0):
+                if (obj.buyOB[i][1] != 0):
                     break
-            if(len(brokers) == 0):
+            if (len(brokers) == 0):
                 obj.buyOB[i][1] = int(random.triangular(10, 1300, 200))
                 obj.buyOB[i][0] = int(random.triangular(1, 20, 7))
             else:
                 obj.buyOB[i][0] = len(obj.remove_duplicates(brokers))
 
-        
         with lock_emit:
             if obj.mkt_ex_mode == False:
-                socketio.emit('order_book', {'sellOB': obj.sellOB, 'buyOB': obj.buyOB, 'ltp': obj.arr[0][5], 'sym': obj.arr[0][9]})
+                socketio.emit('order_book', {
+                              'sellOB': obj.sellOB, 'buyOB': obj.buyOB, 'ltp': obj.arr[0][5], 'sym': obj.arr[0][9]})
             else:
-                socketio.emit('order_book', {'sellOB': obj.sellOB, 'buyOB': obj.buyOB, 'sym': obj.arr[0][9]})
+                socketio.emit(
+                    'order_book', {'sellOB': obj.sellOB, 'buyOB': obj.buyOB, 'sym': obj.arr[0][9]})
 
     def linear_price():
         if len(obj.arr) > 1:
             price_diff = round(obj.arr[1][5] - obj.arr[0][5], 1)
             if abs(price_diff) > 0.3:
                 factor = abs(price_diff)*10 - 1
-                i = 1 if price_diff>0 else -1
+                i = 1 if price_diff > 0 else -1
 
                 time_diff = obj.arr[1][6] - obj.arr[0][6]
                 time_diff = time_diff.total_seconds()
 
                 def next_rate(i):
                     return round(obj.arr[0][5] + 0.1*i, 1)
-                
+
                 while True:
                     flag = 0
                     while next_rate(i) != obj.arr[1][5]:
                         for price in obj.prices:
                             if price == next_rate(i):
-                                i = i+1 if i>0 else i-1
+                                i = i+1 if i > 0 else i-1
                                 flag = 1
                                 factor += 1
                                 break
-                        if(flag == 0):
+                        if (flag == 0):
                             break
                         flag = 0
                     if next_rate(i) == obj.arr[1][5]:
@@ -294,10 +321,10 @@ def orderMatch_sim(obj):
                     obj.buyOB.clear()
                     # print("--------------------------------")
                     genOB(next_rate(i))
-                    i = i+1 if i>0 else i-1
+                    i = i+1 if i > 0 else i-1
 
                     # if there are open market orders of this symbol
-                    if len(MKT_Orders) != 0 and placedOrders [MKT_Orders[0]-1] [1] == obj.arr[0][9]:
+                    if len(MKT_Orders) != 0 and placedOrders[MKT_Orders[0]-1][1] == obj.arr[0][9]:
                         MKT_execute(obj)
                         obj.mkt_ex_mode = True
 
@@ -315,7 +342,7 @@ def orderMatch_sim(obj):
                 obj.mkt_ex_mode = False
 
     def matchOrder():
-        if obj.buyOB[0][2] == obj.sellOB[0][2]: # when top bid & ask price match
+        if obj.buyOB[0][2] == obj.sellOB[0][2]:  # when top bid & ask price match
             for idx, x in enumerate(obj.queue):
                 for y in x:
                     if obj.buyOB[0][2] == y[5]:
@@ -323,44 +350,52 @@ def orderMatch_sim(obj):
                         with lock_db:
                             with app.app_context():
                                 try:
-                                    new_row = PriceRow(conID=y[1], buyerID=y[2], sellerID=y[3], qty=y[4], rate=y[5], buyerName=y[7], sellerName=y[8], symbol=y[9])
+                                    new_row = PriceRow(
+                                        conID=y[1], buyerID=y[2], sellerID=y[3], qty=y[4], rate=y[5], buyerName=y[7], sellerName=y[8], symbol=y[9])
                                     db.session.add(new_row)
                                     db.session.commit()
                                 except IntegrityError:
                                     db.session.rollback()  # Rollback in case of error
-                                    
+
                                 if obj.arr[0][9] == symbol:
-                                    tranData = PriceRow.query.order_by(PriceRow.id).all()
-                                    tranDataDict = [row.to_dict() for row in tranData] # Convert data to a list of dictionaries
-                                    socketio.emit('floorsheet', {'database': tranDataDict})
-                            
+                                    tranData = PriceRow.query.order_by(
+                                        PriceRow.id).all()
+                                    # Convert data to a list of dictionaries
+                                    tranDataDict = [row.to_dict()
+                                                    for row in tranData]
+                                    socketio.emit(
+                                        'floorsheet', {'database': tranDataDict})
+
                         # if a LMT order matches
                         if y[1][8:9] == '1':
                             for indx in range(9, 16):
                                 if y[1][indx] != '0':
                                     global placedOrders
                                     placedOrders[int(y[1][indx:])-1][4] = 0
-                                    socketio.emit('placed_orders', {'placedOrders': placedOrders})
+                                    socketio.emit('placed_orders', {
+                                                  'placedOrders': placedOrders})
                                     break
-                        
+
                         linear_price()
 
-                        del obj.queue[idx][0]  # delete first order of that price
+                        # delete first order of that price
+                        del obj.queue[idx][0]
                         # if orders in that price is empty
                         if len(obj.queue[idx]) == 0:
                             del obj.queue[idx]  # delete that element of queue
-                            del obj.prices[idx]  # delete that particular price from prices list
+                            # delete that particular price from prices list
+                            del obj.prices[idx]
                         del obj.arr[0]
                         return
                     else:
                         break
 
-    
     with lock_start:
         event_firstEmit.wait()
-        socketio.emit('stock_list', {'ltp': obj.arr[0][5], 'sym': obj.arr[0][9], 'scripName': obj.name, 'prevClose': obj.prevClose})
+        socketio.emit('stock_list', {
+                      'ltp': obj.arr[0][5], 'sym': obj.arr[0][9], 'scripName': obj.name, 'prevClose': obj.prevClose})
 
-        if obj.arr[0][9] == symbol: # for default asset to display
+        if obj.arr[0][9] == symbol:  # for default asset to display
             socketio.emit('display_asset', {'sym': symbol})
 
     sym = obj.arr[0][9]
@@ -376,7 +411,7 @@ def orderMatch_sim(obj):
 
             obj.event_start_subThread.clear()
             obj.event_place_LMT.clear()
-        
+
         # when to wrap up order matching simulation
         if finish:
             # if there are any market orders, fill them first
@@ -389,16 +424,18 @@ def orderMatch_sim(obj):
                     if not event_terminate:
                         event_terminate = True
                         del_orders()
-                        socketio.emit('placed_orders', {'placedOrders': placedOrders})
+                        socketio.emit('placed_orders', {
+                                      'placedOrders': placedOrders})
                 break
-    
+
     if obj.arr:  # case where market is abruptly terminated by the admin, fill remaining orders to the db
         with lock_db:
             with app.app_context():
                 try:
                     # Create a list of PriceRow objects
                     new_rows = [
-                        PriceRow(conID=row[1], buyerID=row[2], sellerID=row[3], qty=row[4], rate=row[5], buyerName=row[7], sellerName=row[8], symbol=row[9])
+                        PriceRow(conID=row[1], buyerID=row[2], sellerID=row[3], qty=row[4],
+                                 rate=row[5], buyerName=row[7], sellerName=row[8], symbol=row[9])
                         for row in obj.arr
                     ]
                     # Add all rows in a single operation
@@ -420,7 +457,7 @@ def orderMatch_sim(obj):
 
 def LMT_place(Rate, Qty, OrderNo, type, key):
     OrderData = []
-    
+
     def genTime(idx):
         if idx-1 < 0:
             return assets[key].arr[idx][6] + timedelta(microseconds=-1)
@@ -433,9 +470,11 @@ def LMT_place(Rate, Qty, OrderNo, type, key):
         nonlocal OrderData
         rand = maker(assets[key].arr)
         if type == 'Buy':
-            OrderData = ['', genConID(False, OrderNo), users[placedOrders[OrderNo-1][7]].uid, rand[3], Qty, Rate, genTime(idx), users[placedOrders[OrderNo-1][7]].name, rand[8], assets[key].arr[0][9]]
+            OrderData = ['', genConID(False, OrderNo), users[placedOrders[OrderNo-1][7]].uid, rand[3], Qty,
+                         Rate, genTime(idx), users[placedOrders[OrderNo-1][7]].name, rand[8], assets[key].arr[0][9]]
         else:
-            OrderData = ['', genConID(False, OrderNo), rand[2], users[placedOrders[OrderNo-1][7]].uid, Qty, Rate, genTime(idx), rand[7], users[placedOrders[OrderNo-1][7]].name, assets[key].arr[0][9]]
+            OrderData = ['', genConID(False, OrderNo), rand[2], users[placedOrders[OrderNo-1][7]].uid, Qty,
+                         Rate, genTime(idx), rand[7], users[placedOrders[OrderNo-1][7]].name, assets[key].arr[0][9]]
 
     def in_the_end():
         global placedOrders
@@ -450,9 +489,11 @@ def LMT_place(Rate, Qty, OrderNo, type, key):
 
     with lock_orderPlacing[key]:
         if assets[key].skip == False:
-            assets[key].event_start_subThread.wait() # wait for main-thread to check if orders have matched before overwriting the new order to the data structure
-        
-        compare = (lambda x, y: x < y) if type == 'Buy' else (lambda x, y: x > y)
+            # wait for main-thread to check if orders have matched before overwriting the new order to the data structure
+            assets[key].event_start_subThread.wait()
+
+        compare = (lambda x, y: x < y) if type == 'Buy' else (
+            lambda x, y: x > y)
         for idx, next in enumerate(assets[key].arr):
             if compare(next[5], Rate):
                 write_orderData(idx)
@@ -481,7 +522,8 @@ def LMT_place(Rate, Qty, OrderNo, type, key):
                         idx += 1
                         count += 1
                     else:
-                        write_orderData(idx) if idx+1 == len(assets[key].arr) else write_orderData(idx+1)
+                        write_orderData(
+                            idx) if idx+1 == len(assets[key].arr) else write_orderData(idx+1)
                         assets[key].arr.insert(idx+1, OrderData)
                         for i, price in enumerate(assets[key].prices):
                             if price == Rate:
@@ -519,10 +561,12 @@ def login():
             return redirect(url_for('index'))
         else:
             flash('Invalid username or password', 'error')
-    
+
     return render_template('login.html')
 
 # Logout route
+
+
 @app.route('/logout')
 def logout():
     session.pop('username', None)
@@ -536,6 +580,7 @@ def index():
     if 'username' not in session:
         return redirect(url_for('login'))
     return render_template("index.html")
+
 
 @app.route("/settlement")
 def settlement():
@@ -570,6 +615,54 @@ def symbols():
     return jsonify(symbols)
 
 
+@app.route('/broker_analysis', methods=['GET'])
+def broker_analysis():
+    symbol = request.args.get('symbol')
+
+    if not symbol:
+        return jsonify({'error': 'Symbol parameter is required'}), 400
+
+    # Query for brokers who bought this symbol
+    buyer_data = db.session.query(
+        PriceRow.buyerName,
+        db.func.sum(PriceRow.qty).label("total_buy")
+    ).filter(PriceRow.symbol == symbol, PriceRow.buyerName.isnot(None))\
+     .group_by(PriceRow.buyerName).all()
+
+    # Query for brokers who sold this symbol
+    seller_data = db.session.query(
+        PriceRow.sellerName,
+        db.func.sum(PriceRow.qty).label("total_sell")
+    ).filter(PriceRow.symbol == symbol, PriceRow.sellerName.isnot(None))\
+     .group_by(PriceRow.sellerName).all()
+
+    # Convert results to dictionaries
+    broker_data = {}
+
+    for buyer, total_buy in buyer_data:
+        if buyer:
+            broker_data[buyer] = {"total_buy": total_buy, "total_sell": 0}
+
+    for seller, total_sell in seller_data:
+        if seller:
+            if seller in broker_data:
+                broker_data[seller]["total_sell"] = total_sell
+            else:
+                broker_data[seller] = {
+                    "total_buy": 0, "total_sell": total_sell}
+
+    # Calculate hold (assumed as net buy-sell quantity)
+    for broker in broker_data:
+        broker_data[broker]["total_hold"] = broker_data[broker]["total_buy"] - \
+            broker_data[broker]["total_sell"]
+
+    # Convert broker data to list format for JSON response
+    response_data = [{"broker": broker, **data}
+                     for broker, data in broker_data.items()]
+
+    return jsonify(response_data)
+
+
 @app.route('/graph_data')
 def graph_data():
     """Fetch data from the database, process it using TransactionGraph, and return graph data as JSON."""
@@ -590,11 +683,13 @@ def graph_data():
     transaction_graph = TransactionGraph()
 
     for transaction in transactions:
-        transaction_graph.add_transaction(transaction.buyerID, transaction.sellerID, transaction.qty, transaction.rate)
+        transaction_graph.add_transaction(
+            transaction.buyerID, transaction.sellerID, transaction.qty, transaction.rate)
 
     edges = []
     for u, v, data in transaction_graph.graph.edges(data=True):
-        edges.append({"source": u, "target": v, "qty": data['qty'], "rate": data.get('rate', 0)})
+        edges.append({"source": u, "target": v,
+                     "qty": data['qty'], "rate": data.get('rate', 0)})
 
     return jsonify(edges)
 
@@ -617,9 +712,10 @@ def normalized_graph_data():
         return jsonify({"error": "No transactions found"}), 404
 
     transaction_graph = TransactionGraph()
-    
+
     for transaction in transactions:
-        transaction_graph.add_transaction(transaction.buyerID, transaction.sellerID, transaction.qty, transaction.rate)
+        transaction_graph.add_transaction(
+            transaction.buyerID, transaction.sellerID, transaction.qty, transaction.rate)
 
     # Normalize the graph
     transaction_graph.normalize()
@@ -628,6 +724,7 @@ def normalized_graph_data():
     normalized_graph = transaction_graph.get_normalized_graph()
 
     return jsonify(normalized_graph)
+
 
 @app.route("/graph")
 def graph():
@@ -640,7 +737,8 @@ def graph():
 # Wrap up order matching simulation (admin's route)
 @app.route('/close_market', methods=['POST'])
 def close_market():
-    print("Received Message:", request.json)  # Debugging: Print the received message
+    # Debugging: Print the received message
+    print("Received Message:", request.json)
     global finish
     finish = True
     socketio.emit('wrap_up')
@@ -652,25 +750,30 @@ def close_market():
 def place_order():
     try:
         global Orders
-        
+
         Rate = request.form.get('rate')
         Rate = float(Rate) if Rate else None  # Set to None if empty
         Qty = int(request.form.get('qty'))
-        action = request.form.get('action')  # Get whether it's a buy or sell order
+        # Get whether it's a buy or sell order
+        action = request.form.get('action')
         event_mkt_exec_inc_order_no.wait()
         event_place_order_inc_order_no.clear()
         Orders += 1
         event_place_order_inc_order_no.set()
 
-        if not Rate: # market execution
-            placedOrders.append([Orders, symbol, Qty, 'MKT', Qty, action, False, session['username']])
+        if not Rate:  # market execution
+            placedOrders.append(
+                [Orders, symbol, Qty, 'MKT', Qty, action, False, session['username']])
             MKT_Orders.append(Orders)
-        else: # limit order
-            placedOrders.append([Orders, symbol, Qty, Rate, Qty, action, False, session['username']])
+        else:  # limit order
+            placedOrders.append(
+                [Orders, symbol, Qty, Rate, Qty, action, False, session['username']])
             for idx, asset in enumerate(assets):
                 if asset.arr and asset.arr[0][9] == placedOrders[Orders-1][1]:
                     asset.subThreads += 1
-                    threading.Thread(target=LMT_place, args=(Rate, Qty, Orders, action, idx)).start()  # run process in background
+                    threading.Thread(target=LMT_place, args=(
+                        # run process in background
+                        Rate, Qty, Orders, action, idx)).start()
                     break
         socketio.emit('placed_orders', {'placedOrders': placedOrders})
 
@@ -686,21 +789,26 @@ def handle_deduction(data):
     user = users.get(session['username'])
     user.collateral -= data.get('amt')
 
-    if 'username' in session: # only consider to emit updated collateral to client if user is logged in
+    if 'username' in session:  # only consider to emit updated collateral to client if user is logged in
         # if it was a market order, collateral is deducted as it gets filled
         if data.get('uname'):
-            if session['username'] == data.get('uname'): # so check if that same user hasn't logged out before emiting the collateral
-                socketio.emit('user_info', {'collateral': user.collateral}, room=request.sid)
+            # so check if that same user hasn't logged out before emiting the collateral
+            if session['username'] == data.get('uname'):
+                socketio.emit(
+                    'user_info', {'collateral': user.collateral}, room=request.sid)
         # in cases of limit order, collateral can be deducted all at once and emit
         else:
-            socketio.emit('user_info', {'collateral': user.collateral}, room=request.sid)
+            socketio.emit(
+                'user_info', {'collateral': user.collateral}, room=request.sid)
 
 # Deduct asset balance on sell
+
+
 @socketio.on('deduct_sell')
 def handle_deduction(data):
     user = users.get(session['username'])
     user.balance[symbol] -= data.get('qty')
-    
+
     if 'username' in session:
         socketio.emit('user_info', {'balance': user.balance}, room=request.sid)
 
@@ -716,18 +824,19 @@ def handle_conncet():
             'name': users.get(session['username']).name,
             'balance': users.get(session['username']).balance,
             'collateral': users.get(session['username']).collateral
-            }, room=request.sid)
-        
+        }, room=request.sid)
+
         socketio.emit('placed_orders', {'placedOrders': placedOrders})
 
     event_firstEmit.set()
+
 
 @socketio.on('scrip_selected')
 def handle_scrip_selected(data):
     global symbol
 
     scrip = data.get('scrip')
-    
+
     symbol = scrip
 
 
