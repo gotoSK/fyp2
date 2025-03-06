@@ -1,223 +1,262 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Real-Time Order Book Simulation</title>
-
-    <script src="https://cdn.socket.io/4.5.1/socket.io.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- jQuery for easy AJAX -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <script src="/static/js/script.js"></script>
-    <script src="/static/js/user.js"></script>
-
-    <link rel="stylesheet" href="/static/css/style.css">
-    <link rel="stylesheet" href="/static/css/user.css">
-    <link rel="stylesheet" href="/static/css/blurred.css">
-</head>
-<body>
-    <!-- Stock's live-info & profile section -->
-    <div class="container">
-        <div class="container" id="stock-info">
-        </div>
-
-        <div class="user-area">
-            <div class="dropdown">
-
-                <button class="dropbtn">{{ session['username'] }}</button>
-                
-                <div class="dropdown-content">
-                    <p id="user-name"></p>
-                    <ul id="balances"></ul>
-                    <p id="collateral-display"></p>
-                    {% if session['username'] == 'admin' %}
-                        <a href="#" id="close-market-btn">Close Market</a>
-                        <a href="/settlement">Settle</a>
-                    {% endif %}
-                    <a href="/logout">Log out</a>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Real-Time Order Book Simulation</title>
+        <script src="https://cdn.socket.io/4.5.1/socket.io.min.js"></script>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <!-- jQuery for easy AJAX -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="/static/js/script.js"></script>
+        <script src="/static/js/user.js"></script>
+        <link rel="stylesheet" href="/static/css/style.css">
+        <link rel="stylesheet" href="/static/css/user.css">
+        <link rel="stylesheet" href="/static/css/blurred.css">
+        <link rel="stylesheet" href="/static/css/main.min.css">
+    </head>
+    <body>
+        <!-- Stock's live-info & profile section -->
+        <div class="container">
+            <div class="row">
+                <div class="col-8">
+                    <h3>Order Matching and Clearing Obligations System</h3>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main body of the page -->
-    <div class="container">
-        <!-- Order Book Section (Sell Orders, LTP, Buy Orders) -->
-        <div class="table-container" id="order-book">
-            <h1>Order Book</h1>
-            <!-- Table for 'sellOB', 'LTP', and 'buyOB' -->
-            <table>
-                <thead>
-                    <tr>
-                        <th>Orders</th>
-                        <th>Qty</th>
-                        <th>Price</th>
-                    </tr>
-                </thead>
-                <tbody id="order-book-table-body">
-                    <!-- Table rows for 'sellOB', 'LTP', and 'buyOB' will be dynamically inserted here -->
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Middle Section -->
-        <div class="table-container" id="mid-sec">
-            <div class="nav-bar">
-                <button id="chart-container-btn" class="active">Chart</button>
-                <button id="database-container-btn">Database</button>
-                <button id="stats-container-btn">Stats</button>
-            </div>
-            <div id="chart-container" class="container-content active">
-                <canvas id="priceChart" width="600" height="220"></canvas>
-            </div>
-            <div id="database-container" class="container-content">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>id</th>
-                            <th>conID</th>
-                            <th>Qty</th>
-                            <th>Rate</th>
-                            <th>Amount</th>
-                            <th>Buyer</th>
-                            <th>Seller</th>
-                        </tr>
-                    </thead>
-                    <tbody id="floorsheet-table-body">
-                        <!-- Table rows for 'floorsheet' will be dynamically inserted here -->
-                    </tbody>
-                </table>
-            </div>
-            <div id="stats-container" class="container-content">
-                <p>Comming Soon.</p>
-            </div>
-
-            <!-- Order Form Section -->
-            <div class="form-container">
-                <!-- Form Navigation Buttons -->
-                <div class="nav-bar">
-                    <button id="limit-order-btn" class="active">Limit Order</button>
-                    <button id="market-execution-btn">Market Execution</button>
-                </div>
-
-                <!-- Limit Order Form -->
-                <div id="limit-order-form" class="container-content active">
-                    <div class="form">
-                        <form class="order-form">
-                            <input type="hidden" name="action" value="Buy"> <!-- Action to differentiate -->
-
-                            <label for="rate">Rate:</label>
-                            <input type="number" step="0.1" id="rate" name="rate" required>
-                            
-                            <label for="qty">Qty:</label>
-                            <input type="number" id="qty" name="qty" required>
-                            
-                            <button type="submit">BUY</button>
-                        </form>
-                    </div>
-
-                    <div class="form">
-                        <form class="order-form">
-                            <input type="hidden" name="action" value="Sell"> <!-- Action to differentiate -->
-
-                            <label for="rate">Rate:</label>
-                            <input type="number" step="0.1" id="rate" name="rate" required>
-                            
-                            <label for="qty">Qty:</label>
-                            <input type="number" id="qty" name="qty" required>
-                            
-                            <button type="submit" id="sell-btn">SELL</button>
-                        </form>
-                    </div>
-                </div>
-                
-                <!-- Market Execution Form (Currently Empty) -->
-                <div id="market-execution-form" class="container-content">
-                    <div class="flex-row">
-                        <div class="form">
-                            <form class="order-form">
-                                <input type="hidden" name="action" value="Buy"> <!-- Action to differentiate -->
-
-                                <input type="hidden" id="rate" name="rate" value="">
-                                
-                                <label for="qty">Qty:</label>
-                                <input type="number" id="qty" name="qty" required>
-                                
-                                <button type="submit">BUY</button>
-                            </form>
-                        </div>
-                        
-                        <div class="form">
-                            <form class="order-form">
-                                <input type="hidden" name="action" value="Sell"> <!-- Action to differentiate -->
-                                
-                                <input type="hidden" id="rate" name="rate" value="">
-                                
-                                <label for="qty">Qty:</label>
-                                <input type="number" id="qty" name="qty" required>
-                                
-                                <button type="submit" id="sell-btn">SELL</button>
-                            </form>
+                <div class="col-4">
+                    <div class="text-end">
+                        <div class="user-area">
+                            <div class="dropdown">
+                                <button class="dropbtn">{{ session['username'] }}</button>
+                                <div class="dropdown-content">
+                                    <p id="user-name"></p>
+                                    <ul id="balances"></ul>
+                                    <p id="collateral-display"></p>
+                                    {% if session['username'] == 'admin' %}
+                                    <a href="#" id="close-market-btn">Close Market</a>
+                                    <a href="/settlement">Settlement</a>
+                                    <a href="/graph">Graph</a>
+                                    {% endif %}
+                                    <a href="/logout">Log out</a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+                <div class="col-12">
+                    <div class="p-2 d-flex justify-content-between" id="stock-info"></div>
+                </div>
             </div>
         </div>
-
-        <!-- Explore & Order History -->  
-        <div class="table-container" id="explore-orders">
-            <div class="explore">
-                <!-- Rows will be dynamically added here -->
-            </div>
-            <!-- User placed orders -->  
-            <div class="orders">
-                <div class="nav-bar">
-                    <button id="open-orders-btn" class="active">Open Orders</button>
-                    <button id="filled-orders-btn">Filled Orders</button>
+        <!-- Main body of the page -->
+        <div class="container">
+            <!-- Order Book Section (Sell Orders, LTP, Buy Orders) -->
+            <div class="row">
+                <div class="col-2 p-4">
+                    <div class="table-container" id="order-book">
+                        <h3>Order Book</h3>
+                        <!-- Table for 'sellOB', 'LTP', and 'buyOB' -->
+                        <table class="table table-sm table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Orders</th>
+                                    <th>Qty</th>
+                                    <th>Price</th>
+                                </tr>
+                            </thead>
+                            <tbody id="order-book-table-body">
+                                <!-- Table rows for 'sellOB', 'LTP', and 'buyOB' will be dynamically inserted here --></tbody>
+                        </table>
+                    </div>
                 </div>
-                
-                <!-- Open Orders (visible by default) -->
-                <div id="open-orders" class="container-content active">
-                    <h2>Open Orders</h2>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Symbol</th>
-                                <th>Qty</th>
-                                <th>Rate</th>
-                                <th>Rem.</th>
-                                <th>Type</th>
-                                <th>Success</th>
-                            </tr>
-                        </thead>
-                        <tbody id="open-orders-table-body">
-                            <!-- Open orders will be dynamically inserted here -->
-                        </tbody>
-                    </table>
+                <!-- Middle Section -->
+                <div class="col-7 p-4" id="mid-sec">
+                    <div class="nav-bar">
+                        <button id="chart-container-btn" class="btn form-control active">Chart</button>
+                        <button id="database-container-btn" class="btn form-control">Database</button>
+                        <button id="stats-container-btn" class="btn form-control">Stats</button>
+                    </div>
+                    <div id="chart-container" class="container-content active">
+                        <canvas id="priceChart" width="600" height="280"></canvas>
+                    </div>
+                    <div id="database-container" class="container-content">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>id</th>
+                                    <th>conID</th>
+                                    <th>Qty</th>
+                                    <th>Rate</th>
+                                    <th>Amount</th>
+                                    <th>Buyer</th>
+                                    <th>Seller</th>
+                                </tr>
+                            </thead>
+                            <tbody id="floorsheet-table-body">
+                                <!-- Table rows for 'floorsheet' will be dynamically inserted here --></tbody>
+                        </table>
+                    </div>
+                    <div id="stats-container" class="container-content">
+                        <p>Comming Soon.</p>
+                    </div>
+                    <!-- Order Form Section -->
+                    <div class="form-container mt-2">
+                        <!-- Form Navigation Buttons -->
+                        <div class="nav-bar">
+                            <button id="limit-order-btn" class="btn form-control active">Limit Order</button>
+                            <button class="btn form-control" id="market-execution-btn">Market Execution</button>
+                        </div>
+                        <!-- Limit Order Form -->
+                        <div id="limit-order-form" class="container-content active">
+                            <div class="form">
+                                <form class="order-form">
+                                    <input type="hidden" name="action" value="Buy">
+                                    <!-- Action to differentiate -->
+                                    <label for="rate">Rate:</label>
+                                    <input
+                                        class="form-control"
+                                        type="number"
+                                        step="0.1"
+                                        id="rate"
+                                        name="rate"
+                                        required
+                                    >
+                                    <label for="qty">Qty:</label>
+                                    <input
+                                        class="form-control"
+                                        type="number"
+                                        id="qty"
+                                        name="qty"
+                                        required
+                                    >
+                                    <button class="btn form-control" type="submit">BUY</button>
+                                </form>
+                            </div>
+                            <div class="form">
+                                <form class="order-form">
+                                    <input type="hidden" name="action" value="Sell">
+                                    <!-- Action to differentiate -->
+                                    <label for="rate">Rate:</label>
+                                    <input
+                                        class="form-control"
+                                        type="number"
+                                        step="0.1"
+                                        id="rate"
+                                        name="rate"
+                                        required
+                                    >
+                                    <label for="qty">Qty:</label>
+                                    <input
+                                        class="form-control"
+                                        type="number"
+                                        id="qty"
+                                        name="qty"
+                                        required
+                                    >
+                                    <button type="submit" class="btn form-control" id="sell-btn">SELL</button>
+                                </form>
+                            </div>
+                        </div>
+                        <!-- Market Execution Form (Currently Empty) -->
+                        <div id="market-execution-form" class="container-content">
+                            <div class="flex-row">
+                                <div class="form">
+                                    <form class="order-form">
+                                        <input type="hidden" name="action" value="Buy">
+                                        <!-- Action to differentiate -->
+                                        <input
+                                            class="form-control"
+                                            type="hidden"
+                                            id="rate"
+                                            name="rate"
+                                            value=""
+                                        >
+                                        <label for="qty">Qty:</label>
+                                        <input
+                                            class="form-control"
+                                            type="number"
+                                            id="qty"
+                                            name="qty"
+                                            required
+                                        >
+                                        <button type="submit" class="btn form-control">BUY</button>
+                                    </form>
+                                </div>
+                                <div class="form">
+                                    <form class="order-form">
+                                        <input type="hidden" name="action" value="Sell">
+                                        <!-- Action to differentiate -->
+                                        <input
+                                            class="form-control"
+                                            type="hidden"
+                                            id="rate"
+                                            name="rate"
+                                            value=""
+                                        >
+                                        <label for="qty">Qty:</label>
+                                        <input
+                                            class="form-control"
+                                            type="number"
+                                            id="qty"
+                                            name="qty"
+                                            required
+                                        >
+                                        <button type="submit" class="btn form-control" id="sell-btn">SELL</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                
-                <!-- Filled Orders (hidden by default) -->
-                <div id="filled-orders" class="container-content">
-                    <h2>Filled Orders</h2>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Symbol</th>
-                                <th>Qty</th>
-                                <th>Rate</th>
-                                <th>Rem.</th>
-                                <th>Type</th>
-                            </tr>
-                        </thead>
-                        <tbody id="filled-orders-table-body">
-                            <!-- Filled orders will be dynamically inserted here -->
-                        </tbody>
-                    </table>
-                </div>                
+                <!-- Explore & Order History -->
+                <div class="col-3 p-4">
+                    <div class="table-container" id="explore-orders">
+                        <div class="explore">
+                            <!-- Rows will be dynamically added here --></div>
+                        <!-- User placed orders -->
+                        <div class="orders mt-3">
+                            <div class="nav-bar">
+                                <button class="btn form-control active" id="open-orders-btn" class="active">Open Orders</button>
+                                <button class="btn form-control" id="filled-orders-btn">Filled Orders</button>
+                            </div>
+                            <!-- Open Orders (visible by default) -->
+                            <div id="open-orders" class="container-content  table-responsive active">
+                                <h2>Open Orders</h2>
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Symbol</th>
+                                            <th>Qty</th>
+                                            <th>Rate</th>
+                                            <th>Rem.</th>
+                                            <th>Type</th>
+                                            <th>Success</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="open-orders-table-body">
+                                        <!-- Open orders will be dynamically inserted here --></tbody>
+                                </table>
+                            </div>
+                            <!-- Filled Orders (hidden by default) -->
+                            <div id="filled-orders" class="container-content  table-responsive">
+                                <h2>Filled Orders</h2>
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Symbol</th>
+                                            <th>Qty</th>
+                                            <th>Rate</th>
+                                            <th>Rem.</th>
+                                            <th>Type</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="filled-orders-table-body">
+                                        <!-- Filled orders will be dynamically inserted here --></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div> 
-    </div>
-</body>
+        </div>
+    </body>
 </html>

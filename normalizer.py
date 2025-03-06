@@ -59,7 +59,7 @@ class TransactionGraph:
             for u, v, qty in to_add:
                 self.graph.add_edge(u, v, qty=qty)
 
-        # 🔥 **Remove self-loops explicitly**
+        # **Remove self-loops explicitly**
         self_loops = [(u, v) for u, v in self.graph.edges() if u == v]
         self.graph.remove_edges_from(self_loops)
 
