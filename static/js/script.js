@@ -457,35 +457,52 @@ document.addEventListener('DOMContentLoaded', function () {
         $('#open-orders-table-body').empty();
         $('#filled-orders-table-body').empty();
 
+        let latestOrder = null; // Store the latest order
+
         placedOrders.forEach(function (order) {
             if (order && order[7] == uname) {
-                var row = '<tr>' +
-                    '<td>' + order[1] + '</td>' + // Symbol
-                    '<td>' + order[2] + '</td>' + // Qty
-                    '<td>' + order[3] + '</td>' + // Rate
-                    '<td>' + order[4] + '</td>' + // Rem.
-                    '<td>' + order[5] + '</td>';  // Type (Buy/Sell)
-
-                // If Success is False, show loading circle
-                if (!order[6]) {
-                    row += '<td><div class="loading-circle"></div></td>';
-                }
-                else {
-                    if (order[4] > 0) {
-                        row += '<td>Yes</td>';
-                    }
-                }
-
-                row += '</tr>';
-                // If Rem. is greater than 0, it's an open order
-                if (order[4] > 0) {
-                    $('#open-orders-table-body').append(row);
-                } else {
-                    $('#filled-orders-table-body').append(row);
-                }
+                latestOrder = order; // Keep updating to get the last order
             }
         });
-    } load_placedOrders();
+
+        if (latestOrder) {
+            var row = '<tr>' +
+                '<td>' + latestOrder[1] + '</td>' + // Symbol
+                '<td>' + latestOrder[2] + '</td>' + // Qty
+                '<td>' + latestOrder[3] + '</td>' + // Rate
+                '<td>' + latestOrder[4] + '</td>' + // Rem.
+                '<td>' + latestOrder[5] + '</td>';  // Type (Buy/Sell)
+
+            // If Success is False, show loading circle
+            if (!latestOrder[6]) {
+                row += '<td><div class="loading-circle"></div></td>';
+            } else {
+                if (latestOrder[4] > 0) {
+                    row += '<td>Yes</td>';
+                }
+            }
+
+            row += '</tr>';
+
+            // If Rem. is greater than 0, it's an open order
+            if (latestOrder[4] > 0) {
+                $('#open-orders-table-body').append(row);
+            } else {
+                // Get last emitted order ID from sessionStorage
+                let lastEmittedOrderId = sessionStorage.getItem('lastEmittedOrderId');
+
+                if (latestOrder[0] !== lastEmittedOrderId && latestOrder[5] == 'Buy') {
+                    // Emit only if it's a new order
+                    socket.emit('add_share', { 'qty': latestOrder[2] });
+                    sessionStorage.setItem('lastEmittedOrderId', latestOrder[0]); // Store emitted order ID
+                }
+
+                $('#filled-orders-table-body').append(row);
+            }
+        }
+    }
+
+    load_placedOrders();
 
 
     // Listen for 'order_book' event from the server
@@ -627,10 +644,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 sessionStorage.setItem("collateral", collateral);
                 // Emit deduction event to Flask
                 socket.emit('deduct_buy', { 'amt': qty * rate }, { 'qty': qty });
+
             }
-            balances[symbol] += qty
-            sessionStorage.setItem('balances', JSON.stringify(balances));
-            socket.emit('add_share', { 'qty': qty });
         }
         // Deducting asset balance
         if (action == 'Sell') {
